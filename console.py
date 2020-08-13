@@ -73,7 +73,7 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    if pline[0] is '{' and pline[-1] is'}'\
+                    if pline[0] is '{' and pline[-1] is '}'\
                             and type(eval(pline)) is dict:
                         _args = pline
                     else:
@@ -115,16 +115,35 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, args):
         """ Create an object of any class"""
-        if not args:
+        try:
+            if not args:
+                raise SyntaxError()
+            lst = args.split(" ")
+            o = eval("{}()".format(lst[0]))
+            if len(lst) > 0:
+                for i in range(1, len(lst)):
+                    attr = lst[i].split("=")
+                    if hasattr(o, attr[0]):
+                        try:
+                            if "." in attr[1]:
+                                attr[1] = float(attr[1])
+                            else:
+                                attr[1] = int(attr[1])
+                        except ValueError:
+                            if type(attr[1]) == str:
+                                for c in attr[1]:
+                                    if c == '_':
+                                        attr[1] = attr[1].replace(c, ' ')
+                                    elif c == '"':
+                                        attr[1] = attr[1].replace(c, '')
+                        finally:
+                            setattr(o, attr[0], attr[1])
+            o.save()
+            print("{}".format(o.id))
+        except SyntaxError:
             print("** class name missing **")
-            return
-        elif args not in HBNBCommand.classes:
+        except NameError:
             print("** class doesn't exist **")
-            return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
-        print(new_instance.id)
-        storage.save()
 
     def help_create(self):
         """ Help information for the create method """
@@ -319,6 +338,7 @@ class HBNBCommand(cmd.Cmd):
         """ Help information for the update class """
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
+
 
 if __name__ == "__main__":
     HBNBCommand().cmdloop()
